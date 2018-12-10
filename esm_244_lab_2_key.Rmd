@@ -1,0 +1,15 @@
+---
+title: "ESM 244 Lab 2"
+author: "Allison Horst"
+date: "December 9, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+###Packages: 
+
+- tidyverse
+- gganimate
