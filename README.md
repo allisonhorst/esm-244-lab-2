@@ -1,5 +1,3 @@
 # esm-244-lab-2
-ESM 244 Lab Week: Ordinal/multinomial logistic regression, gganimate, Shiny + leaflet (interactive maps)
+ESM 244 Lab Week: Ordinal logistic regression, PCA, and a Shiny app
 
-Data: Hate crimes (United States) from 2004 - 2017 by bias motivation (Race/Ethnicity/Ancestry). 
-Source: FBI Uniform Crime Reporting (UCR) Program (https://www.fbi.gov/services/cjis/ucr)
