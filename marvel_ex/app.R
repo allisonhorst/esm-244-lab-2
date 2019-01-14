@@ -1,48 +1,51 @@
-#
-# This is a Shiny web application. You can run the application by clicking
-# the 'Run App' button above.
-#
-# Find out more about building applications with Shiny here:
-#
-#    http://shiny.rstudio.com/
-#
 
 library(shiny)
+library(tidyverse)
+library(shinythemes)
+library(RColorBrewer)
+
+# Reads just fine from parent directory I guess...
+marvel <- read_csv("marvel-wikia-data.csv")
+
+# Look at it! View(marvel) from console...you don't want that here. 
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
+  
+  # Update theme:
+  theme = shinytheme("slate"),
    
-   # Application title
-   titlePanel("Old Faithful Geyser Data"),
+   # App title
+   titlePanel("Marvel Characters"),
    
    # Sidebar with a slider input for number of bins 
    sidebarLayout(
       sidebarPanel(
-         sliderInput("bins",
-                     "Number of bins:",
-                     min = 1,
-                     max = 50,
-                     value = 30)
+         radioButtons("side",
+                     "Choose a side:", 
+                     c("Good Characters",
+                       "Bad Characters",
+                       "Neutral Characters"))
       ),
       
       # Show a plot of the generated distribution
       mainPanel(
-         plotOutput("distPlot")
+        plotOutput(outputId = "marvelplot", height = "500px")
       )
    )
 )
 
-# Define server logic required to draw a histogram
+# Define server logic required to draw a graph
 server <- function(input, output) {
    
-   output$distPlot <- renderPlot({
-      # generate bins based on input$bins from ui.R
-      x    <- faithful[, 2] 
-      bins <- seq(min(x), max(x), length.out = input$bins + 1)
-      
-      # draw the histogram with the specified number of bins
-      hist(x, breaks = bins, col = 'darkgray', border = 'white')
-   })
+output$marvelplot <- renderPlot({
+  
+  ggplot(filter(marvel, ALIGN == input$side), aes(x = Year)) +
+    geom_histogram(aes(fill = SEX)) +
+    scale_fill_brewer(palette = "RdPu") +
+    theme_dark()
+     
+  })
 }
 
 # Run the application 
