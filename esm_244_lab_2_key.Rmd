@@ -47,7 +47,7 @@ Note: MASS package also has a 'select' function that will mask 'select' in dplyr
 select <- dplyr::select
 ```
 
-###1. OLS with political party (OSF study: https://osf.io/8n6s4/)
+###1. OLR with political party (Open Science Framework: https://osf.io/8n6s4/)
 
 ####a. Get data (pol_party.csv) and do some wrangling
 

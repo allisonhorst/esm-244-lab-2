@@ -5,7 +5,8 @@ library(shinythemes)
 library(RColorBrewer)
 
 # Reads just fine from parent directory I guess...
-marvel <- read_csv("marvel-wikia-data.csv")
+marvel <- read_csv("marvel-wikia-data.csv") %>% 
+  filter(SEX != "NA")
 
 # Look at it! View(marvel) from console...you don't want that here. 
 
@@ -41,7 +42,7 @@ server <- function(input, output) {
 output$marvelplot <- renderPlot({
   
   ggplot(filter(marvel, ALIGN == input$side), aes(x = Year)) +
-    geom_histogram(aes(fill = SEX)) +
+    geom_bar(aes(fill = SEX), position = "fill") +
     scale_fill_brewer(palette = "RdPu") +
     theme_dark()
      
