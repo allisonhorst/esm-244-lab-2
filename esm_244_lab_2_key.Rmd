@@ -9,7 +9,215 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-###Packages: 
+###Lab 2 Objectives
 
-- tidyverse
-- gganimate
+- Dealing with function conflicts (function name in multiple packages)
+- Ordinal logistic regression
+- Principle components analysis example + biplot
+- Shiny example
+
+###0. Attach packages: 
+
+Note: get devtools version of ggbiplot! 
+
+    library(devtools)
+    install_github("vqv/ggbiplot")
+
+```{r, message = FALSE}
+
+library(tidyverse)
+library(janitor)
+library(MASS)
+library(RColorBrewer)
+library(factoextra)
+library(ggbiplot)
+
+```
+
+Note: MASS package also has a 'select' function that will mask 'select' in dplyr - we don't want that! There are two things we can do: 
+
+(1) State the package explicitly that the function comes from when using it, e.g. dplyr::select
+
+(2) Generally override that the default select is from MASS as follows: 
+
+    select <- dplyr::select
+    
+```{r, message = FALSE}
+select <- dplyr::select
+```
+
+###1. OLS with political party (OSF study: https://osf.io/8n6s4/)
+
+####a. Get data (pol_party.csv) and do some wrangling
+
+```{r, message = FALSE}
+
+pol_party <- read_csv("pol_party.csv") %>% 
+  clean_names() # janitor function for snake case
+
+pol_df <- pol_party %>% 
+  select(birth_year, gender, ethnicity, political_party) %>% 
+  filter(birth_year > 1900, political_party != "NA", political_party <= 7) %>% 
+  mutate(age = 2016 - birth_year)
+
+# For political party: 1 = very liberal, 4 = moderate, 7 = very conservative
+
+# Coerce to factors (including ordered factor for the ranking of political party)
+
+pol_df$political_party <- factor(pol_df$political_party, ordered = TRUE, levels = c("1","2","3","4","5","6","7")) # Check class and levels to ensure
+
+# Then update the gender and ethnicity variables to factors (unordered)
+
+pol_df$ethnicity <- factor(pol_df$ethnicity)
+pol_df$gender <- factor(pol_df$gender) 
+
+# Then we can run ordinal logistic regression, but we should do some visualization first.
+
+```
+
+- Exploratory visualization
+
+```{r, message = FALSE}
+
+counts_eth <- pol_df %>% 
+  group_by(ethnicity, political_party) %>% 
+  tally()
+
+counts_g <- pol_df %>% 
+  group_by(gender, political_party) %>% 
+  tally
+
+# Exploratory graphs
+
+ggplot(pol_df, aes(x = age, y = political_party)) +
+  geom_point(alpha = 0.5, aes(color = ethnicity)) # no notable effect of age
+
+ggplot(pol_df, aes(x = political_party)) +
+  geom_histogram(aes(fill = ethnicity), stat = "count") +
+  scale_fill_brewer(palette = "YlGnBu") +
+  theme_light() +
+  theme(legend.position = "NA") +
+  facet_wrap(~ethnicity, scales = "free")
+
+ggplot(pol_df, aes(x = political_party)) +
+  geom_histogram(aes(fill = gender), stat = "count") +
+  facet_wrap(~gender)
+
+```
+
+- Ordinal logistic regression using MASS::polr
+
+```{r, message = FALSE}
+# Ordinal logistic regression
+
+pol_model <- polr(political_party ~ age + gender + ethnicity, data = pol_df) # Run OLR
+
+summary(pol_model) # See model summary. Note: can convert this to p-values if you really MUST. 
+
+exp(coef(pol_model)) # See exponentiated (odds) coefficients
+
+```
+
+- Probability predictions using the model 
+
+```{r, message = FALSE}
+# Find predictions for the existing row inputs
+pred <- predict(pol_model, type = "probs")
+
+# Bind together with original data rows
+df <- data.frame(pol_df, pred)
+
+# And then you could decide how to show this visually...
+
+```
+
+###2. World bank environment PCA (Principle components analysis)
+
+- Data from the World Bank (<https://data.worldbank.org/topic/environment>)
+
+a. Get the data and do some wrangling
+
+```{r, message = FALSE}
+
+countries <- read_csv("country_info.csv")
+wb_df <- read_csv("wb_df.csv")
+
+regions <- countries %>% 
+  select(code, Region)
+
+# Only use data for 2010 (make sure to check what each step does in wrangling)
+
+wb_10 <- wb_df %>% 
+  select(name, code, indicator, `2010`) %>% 
+  filter(indicator == "CO2 emissions (kt)" |
+           indicator == "Access to electricity (% of population)" |
+           indicator == "Agricultural land (% of land area)" |
+           indicator == "Methane emissions (kt of CO2 equivalent)" |
+           indicator == "Total greenhouse gas emissions (kt of CO2 equivalent)" |
+           indicator == "PM2.5 air pollution, mean annual exposure (micrograms per cubic meter)"
+) %>% 
+  dplyr::rename(value = `2010`) %>% 
+  filter(value != "NA") %>% 
+  full_join(regions) %>% 
+  group_by(code) %>% 
+  spread(indicator, value) %>% 
+  select(-`<NA>`) %>% 
+  ungroup() %>% 
+  clean_names() %>% 
+  filter(region == "North America" |
+           region == "Latin America & Caribbean") %>% 
+  dplyr::rename(electricity = access_to_electricity_percent_of_population, 
+         agland = agricultural_land_percent_of_land_area,
+         co2 = co2_emissions_kt,
+         methane = methane_emissions_kt_of_co2_equivalent,
+         ghg = total_greenhouse_gas_emissions_kt_of_co2_equivalent,
+         air_poll = pm2_5_air_pollution_mean_annual_exposure_micrograms_per_cubic_meter) %>% 
+  filter(electricity != "NA",
+         agland != "NA",
+         co2 != "NA",
+         methane != "NA",
+         ghg != "NA")
+
+```
+
+- Principal components analysis (stats::prcomp) with biplots
+
+```{r, message = FALSE}
+
+wb_pca <- prcomp(wb_10[4:8], scale = TRUE)
+summary(wb_pca) # Explore the eigenvectors!
+
+# ggbiplot for visualization
+ggbiplot(wb_pca, labels = wb_10$name, groups = wb_10$region) 
+  theme_bw()
+  
+# Alternatively, with factominer fviz functions: 
+  
+fviz_pca_biplot(wb_pca,
+                col.var = "contrib",
+             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07")
+)
+
+fviz_pca_ind(wb_pca,
+             col.ind = "cos2", 
+             gradient.cols = c("orange", "magenta", "blueviolet"),
+             repel = TRUE
+             )
+
+```
+
+More PCA in R examples: 
+
+Clear R code: 
+<https://www.datacamp.com/community/tutorials/pca-analysis-r>
+
+Awesome visualization examples using factominer:
+<http://www.sthda.com/english/articles/31-principal-component-methods-in-r-practical-guide/112-pca-principal-component-analysis-essentials/>
+
+
+###3. Shiny example: Marvel characters
+
+
+
+
+
