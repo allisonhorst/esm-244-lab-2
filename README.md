@@ -29,4 +29,4 @@
       
 **World Bank environmental indicators (selected)**: <https://data.worldbank.org/topic/environment>
 
-**Marvel Characters**: 
+**Marvel characters data (from fivethirtyeight)**: <https://github.com/fivethirtyeight/data/tree/master/comic-characters>
