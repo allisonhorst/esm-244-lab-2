@@ -220,6 +220,6 @@ Awesome visualization examples using factominer:
 <http://www.sthda.com/english/articles/31-principal-component-methods-in-r-practical-guide/112-pca-principal-component-analysis-essentials/>
 
 
-###3. Shiny example: Marvel characters
+###3. Shiny example: Marvel characters (create a new Shiny app)
 
 
