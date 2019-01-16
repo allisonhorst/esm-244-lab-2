@@ -179,6 +179,10 @@ wb_10 <- wb_df %>%
          methane != "NA",
          ghg != "NA")
 
+write.csv(wb_10, "wb_10.csv")
+
+# Then just read in wb_10...but the wrangling code is there if you want to see it.
+
 ```
 
 - Principal components analysis (stats::prcomp) with biplots
@@ -189,7 +193,7 @@ wb_pca <- prcomp(wb_10[4:8], scale = TRUE)
 summary(wb_pca) # Explore the eigenvectors!
 
 # ggbiplot for visualization
-ggbiplot(wb_pca, labels = wb_10$name, groups = wb_10$region) 
+ggbiplot(wb_pca, labels = wb_10$name, groups = wb_10$region) +
   theme_bw()
   
 # Alternatively, with factominer fviz functions: 
@@ -217,8 +221,5 @@ Awesome visualization examples using factominer:
 
 
 ###3. Shiny example: Marvel characters
-
-
-
 
 
