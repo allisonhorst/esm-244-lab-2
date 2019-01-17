@@ -13,8 +13,8 @@ knitr::opts_chunk$set(echo = TRUE)
 
 - Dealing with function conflicts (function name in multiple packages)
 - Ordinal logistic regression
-- Principle components analysis example + biplot
-- Shiny example
+- Principle components analysis example + screeplot + biplot
+- Shiny example (Marvel characters)
 
 ###0. Attach packages: 
 
@@ -28,6 +28,7 @@ Note: get devtools version of ggbiplot!
 library(tidyverse)
 library(janitor)
 library(MASS)
+library(ggrepel)
 library(RColorBrewer)
 library(factoextra)
 library(ggbiplot)
@@ -86,7 +87,7 @@ counts_eth <- pol_df %>%
 
 counts_g <- pol_df %>% 
   group_by(gender, political_party) %>% 
-  tally
+  tally()
 
 # Exploratory graphs
 
@@ -181,7 +182,12 @@ wb_10 <- wb_df %>%
 
 write.csv(wb_10, "wb_10.csv")
 
-# Then just read in wb_10...but the wrangling code is there if you want to see it.
+# Then just read in wb_10...but the wrangling code is there if you want to see it!
+
+wb_10 <- read_csv("wb_10.csv") %>% 
+  select(-X1) %>% 
+  column_to_rownames('code')
+
 
 ```
 
@@ -189,37 +195,55 @@ write.csv(wb_10, "wb_10.csv")
 
 ```{r, message = FALSE}
 
-wb_pca <- prcomp(wb_10[4:8], scale = TRUE)
+wb_pca <- prcomp(wb_10[3:8], scale = TRUE)
 summary(wb_pca) # Explore the eigenvectors!
 
 # ggbiplot for visualization
-ggbiplot(wb_pca, labels = wb_10$name, groups = wb_10$region) +
-  theme_bw()
+ggbiplot(wb_pca, groups = wb_10$region) +
+  geom_text_repel(label = rownames(wb_10), size = 2, segment.size = 0.2) +
+  theme_bw() +
+  scale_x_continuous(limits = c(-6,3)) +
+  scale_y_continuous(limits = c(-6,4))
   
-# Alternatively, with factominer fviz functions: 
-  
+# Alternatively, with factoextra fviz functions - these are super cool!
+
+# Scree plot!
+fviz_screeplot(wb_pca)
+
+# Show contributions/quality of representation for different variables on the PCs:
+
+# Contributions of variables to PC1
+fviz_contrib(wb_pca, choice = "var", axes = 1, top = 6)
+# Contributions of variables to PC2
+fviz_contrib(wb_pca, choice = "var", axes = 2, top = 6)
+
+# Biplot (variables + points)
 fviz_pca_biplot(wb_pca,
                 col.var = "contrib",
-             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07")
+             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+             label = "var",
+             repel = TRUE
 )
 
-fviz_pca_ind(wb_pca,
-             col.ind = "cos2", 
-             gradient.cols = c("orange", "magenta", "blueviolet"),
-             repel = TRUE
-             )
+# Extra things: 
+
+# Points only
+fviz_pca_ind(wb_pca)
+
+# Variables only
+fviz_pca_var(wb_pca,
+             col.var = "cos2",
+             repel = TRUE)
 
 ```
 
 More PCA in R examples: 
 
-Clear R code: 
+Clear R code using ggbiplot: 
 <https://www.datacamp.com/community/tutorials/pca-analysis-r>
 
-Awesome visualization examples using factominer:
+Good examples using factoextra:
 <http://www.sthda.com/english/articles/31-principal-component-methods-in-r-practical-guide/112-pca-principal-component-analysis-essentials/>
 
 
 ###3. Shiny example: Marvel characters (create a new Shiny app)
-
-
